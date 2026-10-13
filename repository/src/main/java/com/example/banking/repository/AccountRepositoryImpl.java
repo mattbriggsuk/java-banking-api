@@ -17,15 +17,19 @@ import java.util.Optional;
 // together. The lock is released automatically when the method returns or throws.
 @Repository
 public class AccountRepositoryImpl implements AccountRepository {
+
+    // The account number is the map key, allowing direct account lookups without an internal ID.
     private final Map<String, Account> accounts = new HashMap<>();
 
     @Override
     public synchronized Optional<Account> getAccount(String accountNumber) {
+        // Optional.empty() tells the service layer that no account matched the supplied number.
         return Optional.ofNullable(accounts.get(accountNumber));
     }
 
     @Override
     public synchronized List<Account> getCustomerAccounts(String customerNumber) {
+        // Filter the stored accounts to return only those belonging to this customer.
         return accounts.values().stream()
                 .filter(account -> account.getCustomerNumber().equals(customerNumber))
                 .toList();
@@ -33,12 +37,15 @@ public class AccountRepositoryImpl implements AccountRepository {
 
     @Override
     public synchronized Account save(Account account) {
+        // put() creates a new entry or replaces the existing account with the same account number.
         accounts.put(account.getAccountNumber(), account);
         return account;
     }
 
     @Override
     public synchronized void transferBalance(Account fromAccount, Account toAccount) {
+        // Store both updated balances while holding the same lock so another repository
+        // operation cannot observe the transfer after only one account has been updated.
         accounts.put(fromAccount.getAccountNumber(), fromAccount);
         accounts.put(toAccount.getAccountNumber(), toAccount);
     }
