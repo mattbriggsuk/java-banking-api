@@ -2,7 +2,7 @@
 
 This project is a small banking API built to demonstrate Java and Spring Boot concepts to a developer learning Java from a C# background.
 
-> **Demonstration only:** this project is a learning exercise. It does not represent a complete banking platform, a production architecture, or the security, operational, financial, legal and regulatory controls required for a real financial system. Do not use it to store real customer information or process real money.
+> **Demonstration only:** this project is a learning exercise. It does not represent a complete banking platform or secure production architecture.
 
 The API can:
 
@@ -23,13 +23,14 @@ Customer and account numbers contain 16 digits and include a Luhn check digit. T
 - Jakarta Bean Validation
 - Maven multi-module projects
 - In-memory repositories
+- JUnit 5 and Mockito unit tests
 
 ## Project structure
 
 ```text
 JavaBankingApiPlayground/
 |-- api/          Spring Boot entry point, controllers and HTTP exception handling
-|-- business/     Customer and account business rules
+|-- business/     Customer and account business rules and unit tests
 |-- domain/       Models, DTOs, enums and service/repository interfaces
 |-- repository/   In-memory repository implementations
 |-- utils/        Shared number generation and validation utilities
@@ -127,6 +128,22 @@ Account service operations and in-memory repository methods use `synchronized`. 
 
 The server assigns `transactionDate` using `Instant.now()` when it processes a deposit, withdrawal or transfer. Clients do not supply this field.
 
+## Business-layer unit tests
+
+The automated tests live under `business/src/test/java` and cover `AccountServiceImpl` and `CustomerServiceImpl`. They are unit tests: each service is constructed directly, and Mockito supplies mock implementations of `AccountRepository` and `CustomerRepository`. Spring is not started and the in-memory repository implementations are not used.
+
+JUnit 5 provides the test lifecycle and assertions. Mockito controls repository responses and verifies repository calls. This keeps the tests focused on business behavior, including:
+
+- Customer registration, lookup and account listing.
+- Account creation and closure.
+- Deposits, withdrawals and transfers.
+- Invalid identifiers, missing records and closed accounts.
+- Insufficient funds and other rejected operations.
+- Generated identifier validity, balance changes and transaction timestamps.
+- Whether successful operations are persisted and rejected operations avoid repository writes.
+
+The test classes use fixed Luhn-valid customer and account numbers. Generated numbers are checked for validity instead of being compared with an exact value because number generation is random.
+
 ## Running the application
 
 Requirements:
@@ -138,6 +155,12 @@ From the repository root, build all modules:
 
 ```shell
 mvn clean package
+```
+
+Run the business-layer unit tests and build the domain and utility modules they depend on:
+
+```shell
+mvn -pl business -am test
 ```
 
 Run the Spring Boot API:
@@ -252,7 +275,7 @@ Content-Type: application/json
 }
 ```
 
-The files in [`tests/http`](tests/http) contain ordered request sequences for the IntelliJ IDEA HTTP client or compatible REST clients. Run each file from top to bottom because later requests use values returned by earlier requests.
+The files in [`client`](.client/http) contain ordered request sequences for the IntelliJ IDEA HTTP client or compatible REST clients. Run each file from top to bottom because later requests use values returned by earlier requests.
 
 ## Demonstration scope and limitations
 
@@ -272,7 +295,7 @@ This code intentionally favors visibility and simplicity so that Java and Spring
 - Validation demonstrates basic input and business rules; it is not a complete financial validation policy.
 - Exception handling is simplified and does not define a complete, versioned error contract.
 - `synchronized` only coordinates work inside one running application instance.
-- There is no automated test suite; the `.http` files provide manual request scenarios only.
+- Automated tests currently cover the business layer; the `.http` files provide manual API scenarios.
 - The API has no versioning, generated OpenAPI documentation or compatibility policy.
 
 These deliberate omissions keep the project focused on basic Java, Spring Boot, DTO mapping, validation, dependency injection and layered application design.
