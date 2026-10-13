@@ -1,0 +1,31 @@
+﻿# VS Code REST Client (Huachao Mao): send requests in order from top to bottom.
+@baseUrl = http://localhost:8080
+
+### Register a customer
+# @name registerCustomer
+POST {{baseUrl}}/api/customer/register
+Content-Type: application/json
+
+{
+  "customer": {
+    "firstName": "Alex",
+    "lastName": "Morgan",
+    "email": "alex.morgan@example.com"
+  }
+}
+
+### Get the registered customer.
+GET {{baseUrl}}/api/customer/get?customerNumber={{registerCustomer.response.body.$.customer.customerNumber}}
+Accept: application/json
+
+### Attempt to get a customer that does not exist.
+GET {{baseUrl}}/api/customer/get?customerNumber=0000000000000000
+Accept: application/json
+
+### Get accounts before opening one (expected: 200 with an empty accounts list).
+GET {{baseUrl}}/api/customer/accounts?customerNumber={{registerCustomer.response.body.$.customer.customerNumber}}
+Accept: application/json
+
+### Get accounts with an invalid customer number (expected: 400).
+GET {{baseUrl}}/api/customer/accounts?customerNumber=123
+Accept: application/json

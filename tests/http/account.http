@@ -1,0 +1,134 @@
+﻿# VS Code REST Client (Huachao Mao): send requests in order from top to bottom.
+@baseUrl = http://localhost:8080
+
+### Register a customer for the account scenarios
+# @name registerAccountCustomer
+POST {{baseUrl}}/api/customer/register
+Content-Type: application/json
+
+{
+  "customer": {
+    "firstName": "Taylor",
+    "lastName": "Reed",
+    "email": "taylor.reed@example.com"
+  }
+}
+
+### Create the source account
+# @name createSourceAccount
+POST {{baseUrl}}/api/account/create
+Content-Type: application/json
+
+{
+  "customerNumber": "{{registerAccountCustomer.response.body.$.customer.customerNumber}}"
+}
+
+### Create the destination account
+# @name createDestinationAccount
+POST {{baseUrl}}/api/account/create
+Content-Type: application/json
+
+{
+  "customerNumber": "{{registerAccountCustomer.response.body.$.customer.customerNumber}}"
+}
+
+### List the customer's accounts (expected: 200 with two AccountDto objects).
+GET {{baseUrl}}/api/customer/accounts?customerNumber={{registerAccountCustomer.response.body.$.customer.customerNumber}}
+Accept: application/json
+
+### Deposit into the source account
+POST {{baseUrl}}/api/account/deposit
+Content-Type: application/json
+
+{
+  "transaction": {
+    "transactionType": "DEPOSIT",
+    "amount": 100.00,
+    "targetAccountNumber": "{{createSourceAccount.response.body.$.account.accountNumber}}"
+  }
+}
+
+### Withdraw from the source account
+POST {{baseUrl}}/api/account/withdraw
+Content-Type: application/json
+
+{
+  "transaction": {
+    "transactionType": "WITHDRAWAL",
+    "amount": 10.00,
+    "targetAccountNumber": "{{createSourceAccount.response.body.$.account.accountNumber}}"
+  }
+}
+
+### Transfer funds to the destination account
+POST {{baseUrl}}/api/account/transfer
+Content-Type: application/json
+
+{
+  "transaction": {
+    "transactionType": "TRANSFER",
+    "amount": 25.00,
+    "sourceAccountNumber": "{{createSourceAccount.response.body.$.account.accountNumber}}",
+    "targetAccountNumber": "{{createDestinationAccount.response.body.$.account.accountNumber}}"
+  }
+}
+
+### Withdraw the remaining source balance
+POST {{baseUrl}}/api/account/withdraw
+Content-Type: application/json
+
+{
+  "transaction": {
+    "transactionType": "WITHDRAWAL",
+    "amount": 65.00,
+    "targetAccountNumber": "{{createSourceAccount.response.body.$.account.accountNumber}}"
+  }
+}
+
+### Withdraw the destination balance
+POST {{baseUrl}}/api/account/withdraw
+Content-Type: application/json
+
+{
+  "transaction": {
+    "transactionType": "WITHDRAWAL",
+    "amount": 25.00,
+    "targetAccountNumber": "{{createDestinationAccount.response.body.$.account.accountNumber}}"
+  }
+}
+
+### Close the source account
+POST {{baseUrl}}/api/account/close
+Content-Type: application/json
+
+{
+  "accountNumber": "{{createSourceAccount.response.body.$.account.accountNumber}}"
+}
+
+### Close the destination account
+POST {{baseUrl}}/api/account/close
+Content-Type: application/json
+
+{
+  "accountNumber": "{{createDestinationAccount.response.body.$.account.accountNumber}}"
+}
+
+### Attempt to deposit into a closed account (expected: 409).
+POST {{baseUrl}}/api/account/deposit
+Content-Type: application/json
+
+{
+  "transaction": {
+    "transactionType": "DEPOSIT",
+    "amount": 1.00,
+    "targetAccountNumber": "{{createSourceAccount.response.body.$.account.accountNumber}}"
+  }
+}
+
+### Attempt to create an account for a missing customer (expected: 404).
+POST {{baseUrl}}/api/account/create
+Content-Type: application/json
+
+{
+  "customerNumber": "0000000000000000"
+}
