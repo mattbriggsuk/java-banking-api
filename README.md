@@ -1,6 +1,6 @@
 # Java Banking API Playground
 
-This project is a small banking API built to demonstrate Java and Spring Boot concepts to a developer learning Java from a C# background.
+This project is a small banking API built to demonstrate Java and Spring Boot concepts to a developer learning Java.
 
 > **Demonstration only:** this project is a learning exercise. It does not represent a complete banking platform or secure production architecture.
 
